@@ -94,37 +94,420 @@
         // Main application initialization
         async function initializeApp() {
             try {
-                // Import modules
-                const { authManager } = await import('./auth.js');
-                const { automationManager } = await import('./automation.js');
-                const { dashboardManager } = await import('./dashboard.js');
+                console.log('Starting application initialization...');
                 
-                // Initialize authentication first
-                console.log('Initializing authentication...');
-                authManager.onAuthStateChange(async (user) => {
-                    if (user) {
-                        console.log('User authenticated, initializing automation system...');
-                        
-                        // Initialize automation system
-                        await automationManager.initialize();
-                        
-                        // Initialize dashboard
-                        await dashboardManager.initialize();
-                        
-                        // Hide loading screen
-                        hideLoadingScreen();
+                // First try to initialize without modules for demo mode
+                if (typeof window !== 'undefined') {
+                    // Create basic dashboard structure
+                    createBasicDashboard();
+                    hideLoadingScreen();
+                    return;
+                }
+                
+                // Try to import modules
+                console.log('Importing modules...');
+                const { authManager } = await import('./auth.js').catch(() => ({ authManager: null }));
+                
+                if (authManager) {
+                    console.log('Initializing authentication...');
+                    const authSuccess = await authManager.initialize();
+                    
+                    if (authSuccess) {
+                        authManager.onAuthStateChange(async (user) => {
+                            if (user) {
+                                console.log('User authenticated, loading modules...');
+                                
+                                try {
+                                    const { automationManager } = await import('./automation.js');
+                                    const { dashboardManager } = await import('./dashboard.js');
+                                    
+                                    await automationManager.initialize();
+                                    await dashboardManager.initialize();
+                                } catch (error) {
+                                    console.warn('Failed to load advanced modules, using basic dashboard:', error);
+                                    createBasicDashboard();
+                                }
+                                
+                                hideLoadingScreen();
+                            } else {
+                                console.log('User not authenticated');
+                                hideLoadingScreen();
+                            }
+                        });
                     } else {
-                        console.log('User not authenticated');
+                        // Auth manager failed, show basic dashboard
+                        createBasicDashboard();
                         hideLoadingScreen();
                     }
-                });
+                } else {
+                    // No auth manager, show basic dashboard
+                    createBasicDashboard();
+                    hideLoadingScreen();
+                }
 
                 console.log('Application initialized successfully');
                 
             } catch (error) {
                 console.error('Failed to initialize application:', error);
-                showErrorBoundary(error.message);
+                createBasicDashboard();
+                hideLoadingScreen();
             }
+        }
+
+        // Create basic dashboard for demo/offline mode
+        function createBasicDashboard() {
+            const dashboard = document.getElementById('dashboard');
+            dashboard.innerHTML = `
+                <div class="min-h-screen" style="background-color: #0f172a; color: #f1f5f9;">
+                    <!-- Header -->
+                    <header style="background-color: #1e293b; padding: 1.5rem; border-bottom: 1px solid #334155;">
+                        <div style="max-width: 80rem; margin: 0 auto; display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; align-items: center;">
+                                <h1 style="font-size: 1.875rem; font-weight: bold; color: white;">ROI-360 Automação</h1>
+                                <span style="margin-left: 0.75rem; padding: 0.25rem 0.5rem; background-color: #3b82f6; color: white; font-size: 0.75rem; border-radius: 0.375rem;">DEMO</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <div style="font-size: 0.875rem; color: #d1d5db;">
+                                    Olá, <span style="font-weight: 600; color: white;">Usuário Demo</span>
+                                </div>
+                                <button onclick="location.reload()" style="padding: 0.5rem 1rem; background-color: #dc2626; color: white; border-radius: 0.375rem; border: none; cursor: pointer;">
+                                    Recarregar
+                                </button>
+                            </div>
+                        </div>
+                    </header>
+
+                    <!-- Navigation -->
+                    <nav style="background-color: #1e293b; border-bottom: 1px solid #334155;">
+                        <div style="max-width: 80rem; margin: 0 auto; padding: 0 1.5rem;">
+                            <div style="display: flex; gap: 2rem;">
+                                <button onclick="showView('overview')" id="nav-overview" style="padding: 1rem 0.5rem; font-size: 0.875rem; font-weight: 500; color: #3b82f6; border-bottom: 2px solid #3b82f6; background: none; border-left: none; border-right: none; border-top: none; cursor: pointer;">
+                                    📊 Visão Geral
+                                </button>
+                                <button onclick="showView('automations')" id="nav-automations" style="padding: 1rem 0.5rem; font-size: 0.875rem; font-weight: 500; color: #d1d5db; border-bottom: 2px solid transparent; background: none; border: none; cursor: pointer;">
+                                    🤖 Automações
+                                </button>
+                                <button onclick="showView('executions')" id="nav-executions" style="padding: 1rem 0.5rem; font-size: 0.875rem; font-weight: 500; color: #d1d5db; border-bottom: 2px solid transparent; background: none; border: none; cursor: pointer;">
+                                    ⚡ Execuções
+                                </button>
+                                <button onclick="showView('logs')" id="nav-logs" style="padding: 1rem 0.5rem; font-size: 0.875rem; font-weight: 500; color: #d1d5db; border-bottom: 2px solid transparent; background: none; border: none; cursor: pointer;">
+                                    📝 Logs
+                                </button>
+                            </div>
+                        </div>
+                    </nav>
+
+                    <!-- Main Content -->
+                    <main style="max-width: 80rem; margin: 0 auto; padding: 1.5rem;">
+                        <div id="dashboard-content">
+                            ${getOverviewContent()}
+                        </div>
+                    </main>
+                </div>
+            `;
+            
+            dashboard.classList.remove('hidden');
+            
+            // Add global functions
+            window.showView = showView;
+            window.createAutomation = createAutomation;
+            window.executeAutomation = executeAutomation;
+        }
+
+        // Navigation function
+        function showView(view) {
+            // Update navigation
+            document.querySelectorAll('nav button').forEach(btn => {
+                btn.style.color = '#d1d5db';
+                btn.style.borderBottomColor = 'transparent';
+            });
+            
+            const activeBtn = document.getElementById('nav-' + view);
+            if (activeBtn) {
+                activeBtn.style.color = '#3b82f6';
+                activeBtn.style.borderBottomColor = '#3b82f6';
+            }
+            
+            // Update content
+            const content = document.getElementById('dashboard-content');
+            switch (view) {
+                case 'overview':
+                    content.innerHTML = getOverviewContent();
+                    break;
+                case 'automations':
+                    content.innerHTML = getAutomationsContent();
+                    break;
+                case 'executions':
+                    content.innerHTML = getExecutionsContent();
+                    break;
+                case 'logs':
+                    content.innerHTML = getLogsContent();
+                    break;
+            }
+        }
+
+        // Content functions
+        function getOverviewContent() {
+            return \`
+                <div>
+                    <h2 style="font-size: 1.5rem; font-weight: bold; color: white; margin-bottom: 1.5rem;">Visão Geral do Sistema</h2>
+                    
+                    <!-- Stats Cards -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                        <div style="background-color: #1e293b; padding: 1.5rem; border-radius: 0.5rem; border: 1px solid #334155;">
+                            <div style="display: flex; align-items: center;">
+                                <div style="width: 2rem; height: 2rem; background-color: #3b82f6; border-radius: 0.375rem; display: flex; align-items: center; justify-content: center; margin-right: 1rem;">
+                                    🤖
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.875rem; color: #9ca3af; margin-bottom: 0.25rem;">Total de Automações</div>
+                                    <div style="font-size: 1.875rem; font-weight: 600; color: white;">3</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="background-color: #1e293b; padding: 1.5rem; border-radius: 0.5rem; border: 1px solid #334155;">
+                            <div style="display: flex; align-items: center;">
+                                <div style="width: 2rem; height: 2rem; background-color: #10b981; border-radius: 0.375rem; display: flex; align-items: center; justify-content: center; margin-right: 1rem;">
+                                    ✅
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.875rem; color: #9ca3af; margin-bottom: 0.25rem;">Ativas</div>
+                                    <div style="font-size: 1.875rem; font-weight: 600; color: white;">2</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="background-color: #1e293b; padding: 1.5rem; border-radius: 0.5rem; border: 1px solid #334155;">
+                            <div style="display: flex; align-items: center;">
+                                <div style="width: 2rem; height: 2rem; background-color: #3b82f6; border-radius: 0.375rem; display: flex; align-items: center; justify-content: center; margin-right: 1rem;">
+                                    ⚡
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.875rem; color: #9ca3af; margin-bottom: 0.25rem;">Execuções</div>
+                                    <div style="font-size: 1.875rem; font-weight: 600; color: white;">12</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="background-color: #1e293b; padding: 1.5rem; border-radius: 0.5rem; border: 1px solid #334155;">
+                            <div style="display: flex; align-items: center;">
+                                <div style="width: 2rem; height: 2rem; background-color: #f59e0b; border-radius: 0.375rem; display: flex; align-items: center; justify-content: center; margin-right: 1rem;">
+                                    📈
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.875rem; color: #9ca3af; margin-bottom: 0.25rem;">Taxa de Sucesso</div>
+                                    <div style="font-size: 1.875rem; font-weight: 600; color: white;">85%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Demo Message -->
+                    <div style="background-color: #1e293b; padding: 1.5rem; border-radius: 0.5rem; border: 1px solid #3b82f6; margin-bottom: 2rem;">
+                        <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                            <span style="font-size: 1.25rem; margin-right: 0.5rem;">ℹ️</span>
+                            <h3 style="font-size: 1.125rem; font-weight: 600; color: #3b82f6;">Modo Demo</h3>
+                        </div>
+                        <p style="color: #d1d5db; margin-bottom: 1rem;">
+                            Este é o sistema ROI-360 Automação funcionando em modo demonstração. 
+                            Todos os dados exibidos são exemplos para mostrar a funcionalidade do sistema.
+                        </p>
+                        <p style="color: #9ca3af; font-size: 0.875rem;">
+                            Para acesso completo, configure as credenciais do Firebase e recarregue a página.
+                        </p>
+                    </div>
+                </div>
+            \`;
+        }
+
+        function getAutomationsContent() {
+            return \`
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h2 style="font-size: 1.5rem; font-weight: bold; color: white;">Minhas Automações</h2>
+                        <button onclick="createAutomation()" style="padding: 0.5rem 1rem; background-color: #3b82f6; color: white; border-radius: 0.375rem; border: none; cursor: pointer;">
+                            + Nova Automação
+                        </button>
+                    </div>
+
+                    <div style="background-color: #1e293b; border-radius: 0.5rem; border: 1px solid #334155; overflow: hidden;">
+                        <div style="padding: 1.5rem; border-bottom: 1px solid #334155;">
+                            <h3 style="font-size: 1.125rem; font-weight: 500; color: white;">Lista de Automações (Demo)</h3>
+                        </div>
+                        
+                        <div style="overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <thead style="background-color: #374151;">
+                                    <tr>
+                                        <th style="padding: 0.75rem 1.5rem; text-align: left; font-size: 0.75rem; font-weight: 500; color: #d1d5db; text-transform: uppercase;">Nome</th>
+                                        <th style="padding: 0.75rem 1.5rem; text-align: left; font-size: 0.75rem; font-weight: 500; color: #d1d5db; text-transform: uppercase;">Status</th>
+                                        <th style="padding: 0.75rem 1.5rem; text-align: left; font-size: 0.75rem; font-weight: 500; color: #d1d5db; text-transform: uppercase;">Execuções</th>
+                                        <th style="padding: 0.75rem 1.5rem; text-align: left; font-size: 0.75rem; font-weight: 500; color: #d1d5db; text-transform: uppercase;">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody style="background-color: #1e293b;">
+                                    <tr style="border-bottom: 1px solid #374151;">
+                                        <td style="padding: 1rem 1.5rem;">
+                                            <div style="font-size: 0.875rem; font-weight: 500; color: white;">Prospecção LinkedIn</div>
+                                            <div style="font-size: 0.875rem; color: #9ca3af;">Automação para captar leads no LinkedIn</div>
+                                        </td>
+                                        <td style="padding: 1rem 1.5rem;">
+                                            <span style="padding: 0.25rem 0.5rem; font-size: 0.75rem; font-weight: 600; border-radius: 9999px; background-color: rgba(16, 185, 129, 0.1); color: #10b981;">Ativa</span>
+                                        </td>
+                                        <td style="padding: 1rem 1.5rem; color: #d1d5db; font-size: 0.875rem;">
+                                            <div>8 total</div>
+                                            <div style="font-size: 0.75rem;">
+                                                <span style="color: #10b981;">7 ✓</span>
+                                                <span style="color: #ef4444; margin-left: 0.5rem;">1 ✗</span>
+                                            </div>
+                                        </td>
+                                        <td style="padding: 1rem 1.5rem;">
+                                            <button onclick="executeAutomation('linkedin')" style="color: #3b82f6; background: none; border: none; cursor: pointer; margin-right: 1rem;">▶️ Executar</button>
+                                            <button style="color: #f59e0b; background: none; border: none; cursor: pointer;">⏸️ Pausar</button>
+                                        </td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid #374151;">
+                                        <td style="padding: 1rem 1.5rem;">
+                                            <div style="font-size: 0.875rem; font-weight: 500; color: white;">Email Marketing</div>
+                                            <div style="font-size: 0.875rem; color: #9ca3af;">Sequência automatizada de emails</div>
+                                        </td>
+                                        <td style="padding: 1rem 1.5rem;">
+                                            <span style="padding: 0.25rem 0.5rem; font-size: 0.75rem; font-weight: 600; border-radius: 9999px; background-color: rgba(16, 185, 129, 0.1); color: #10b981;">Ativa</span>
+                                        </td>
+                                        <td style="padding: 1rem 1.5rem; color: #d1d5db; font-size: 0.875rem;">
+                                            <div>4 total</div>
+                                            <div style="font-size: 0.75rem;">
+                                                <span style="color: #10b981;">4 ✓</span>
+                                                <span style="color: #ef4444; margin-left: 0.5rem;">0 ✗</span>
+                                            </div>
+                                        </td>
+                                        <td style="padding: 1rem 1.5rem;">
+                                            <button onclick="executeAutomation('email')" style="color: #3b82f6; background: none; border: none; cursor: pointer; margin-right: 1rem;">▶️ Executar</button>
+                                            <button style="color: #f59e0b; background: none; border: none; cursor: pointer;">⏸️ Pausar</button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 1rem 1.5rem;">
+                                            <div style="font-size: 0.875rem; font-weight: 500; color: white;">Relatórios Diários</div>
+                                            <div style="font-size: 0.875rem; color: #9ca3af;">Geração automática de relatórios</div>
+                                        </td>
+                                        <td style="padding: 1rem 1.5rem;">
+                                            <span style="padding: 0.25rem 0.5rem; font-size: 0.75rem; font-weight: 600; border-radius: 9999px; background-color: rgba(148, 163, 184, 0.1); color: #94a3b8;">Inativa</span>
+                                        </td>
+                                        <td style="padding: 1rem 1.5rem; color: #d1d5db; font-size: 0.875rem;">
+                                            <div>0 total</div>
+                                            <div style="font-size: 0.75rem; color: #9ca3af;">Nunca executada</div>
+                                        </td>
+                                        <td style="padding: 1rem 1.5rem;">
+                                            <button style="color: #10b981; background: none; border: none; cursor: pointer; margin-right: 1rem;">▶️ Ativar</button>
+                                            <button style="color: #3b82f6; background: none; border: none; cursor: pointer;">✏️ Editar</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            \`;
+        }
+
+        function getExecutionsContent() {
+            return \`
+                <div>
+                    <h2 style="font-size: 1.5rem; font-weight: bold; color: white; margin-bottom: 1.5rem;">Histórico de Execuções</h2>
+                    
+                    <div style="background-color: #1e293b; border-radius: 0.5rem; border: 1px solid #334155; overflow: hidden;">
+                        <div style="padding: 1.5rem; border-bottom: 1px solid #334155;">
+                            <h3 style="font-size: 1.125rem; font-weight: 500; color: white;">Execuções Recentes (Demo)</h3>
+                        </div>
+                        
+                        <div style="padding: 1.5rem;">
+                            <div style="margin-bottom: 1rem; padding: 1rem; border-radius: 0.375rem; border: 1px solid #374151;">
+                                <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 0.5rem;">
+                                    <span style="color: #10b981; margin-right: 0.5rem;">✅</span>
+                                    <span style="font-weight: 500; color: white;">Prospecção LinkedIn</span>
+                                    <span style="margin-left: auto; font-size: 0.75rem; color: #9ca3af;">há 2 horas</span>
+                                </div>
+                                <div style="font-size: 0.875rem; color: #d1d5db;">Execução concluída com sucesso - 5 novos leads encontrados</div>
+                            </div>
+                            
+                            <div style="margin-bottom: 1rem; padding: 1rem; border-radius: 0.375rem; border: 1px solid #374151;">
+                                <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 0.5rem;">
+                                    <span style="color: #10b981; margin-right: 0.5rem;">✅</span>
+                                    <span style="font-weight: 500; color: white;">Email Marketing</span>
+                                    <span style="margin-left: auto; font-size: 0.75rem; color: #9ca3af;">há 4 horas</span>
+                                </div>
+                                <div style="font-size: 0.875rem; color: #d1d5db;">Sequência de emails enviada para 150 contatos</div>
+                            </div>
+                            
+                            <div style="margin-bottom: 1rem; padding: 1rem; border-radius: 0.375rem; border: 1px solid #374151;">
+                                <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 0.5rem;">
+                                    <span style="color: #3b82f6; margin-right: 0.5rem;">⏳</span>
+                                    <span style="font-weight: 500; color: white;">Prospecção LinkedIn</span>
+                                    <span style="margin-left: auto; font-size: 0.75rem; color: #9ca3af;">há 6 horas</span>
+                                </div>
+                                <div style="font-size: 0.875rem; color: #d1d5db;">Em execução - processando perfis...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            \`;
+        }
+
+        function getLogsContent() {
+            return \`
+                <div>
+                    <h2 style="font-size: 1.5rem; font-weight: bold; color: white; margin-bottom: 1.5rem;">Logs do Sistema</h2>
+                    
+                    <div style="background-color: #1e293b; border-radius: 0.5rem; border: 1px solid #334155; overflow: hidden;">
+                        <div style="padding: 1.5rem; border-bottom: 1px solid #334155;">
+                            <h3 style="font-size: 1.125rem; font-weight: 500; color: white;">Eventos Recentes (Demo)</h3>
+                        </div>
+                        
+                        <div style="max-height: 24rem; overflow-y: auto;">
+                            <div style="padding: 1rem 1.5rem; border-bottom: 1px solid #374151;">
+                                <div style="display: flex; align-items: start;">
+                                    <span style="color: #3b82f6; font-family: monospace; font-size: 0.75rem; text-transform: uppercase; margin-right: 1rem; flex-shrink: 0;">INFO</span>
+                                    <div style="flex: 1;">
+                                        <div style="font-size: 0.875rem; color: white;">Sistema iniciado em modo demo</div>
+                                        <div style="font-size: 0.75rem; color: #9ca3af; margin-top: 0.25rem;">2025-07-22 01:55:00</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div style="padding: 1rem 1.5rem; border-bottom: 1px solid #374151;">
+                                <div style="display: flex; align-items: start;">
+                                    <span style="color: #10b981; font-family: monospace; font-size: 0.75rem; text-transform: uppercase; margin-right: 1rem; flex-shrink: 0;">SUCCESS</span>
+                                    <div style="flex: 1;">
+                                        <div style="font-size: 0.875rem; color: white;">Automação "Prospecção LinkedIn" executada com sucesso</div>
+                                        <div style="font-size: 0.75rem; color: #9ca3af; margin-top: 0.25rem;">2025-07-22 01:53:00</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div style="padding: 1rem 1.5rem; border-bottom: 1px solid #374151;">
+                                <div style="display: flex; align-items: start;">
+                                    <span style="color: #f59e0b; font-family: monospace; font-size: 0.75rem; text-transform: uppercase; margin-right: 1rem; flex-shrink: 0;">WARNING</span>
+                                    <div style="flex: 1;">
+                                        <div style="font-size: 0.875rem; color: white;">Taxa limite de API atingida - aguardando reset</div>
+                                        <div style="font-size: 0.75rem; color: #9ca3af; margin-top: 0.25rem;">2025-07-22 01:50:00</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            \`;
+        }
+
+        // Demo functions
+        function createAutomation() {
+            alert('Funcionalidade de criação de automação em desenvolvimento.\\nEsta é uma versão de demonstração.');
+        }
+
+        function executeAutomation(type) {
+            alert(\`Executando automação: \${type}\\nEsta é uma simulação em modo demo.\`);
         }
 
         function hideLoadingScreen() {

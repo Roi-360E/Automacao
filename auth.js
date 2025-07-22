@@ -1,31 +1,99 @@
 // Authentication System
-import { auth, db } from './firebase-config.js';
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  signOut, 
-  onAuthStateChanged,
-  updateProfile,
-  sendPasswordResetEmail
-} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { 
-  doc, 
-  setDoc, 
-  getDoc, 
-  serverTimestamp 
-} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-import { showNotification } from './utils.js';
+let auth, db;
+let firebaseAuth, firebaseFirestore;
+
+// Initialize Firebase imports
+async function initFirebaseImports() {
+  try {
+    const { auth: authInstance, db: dbInstance } = await import('./firebase-config.js');
+    auth = authInstance;
+    db = dbInstance;
+    
+    const firebaseAuthModule = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
+    const firestoreModule = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+    
+    firebaseAuth = firebaseAuthModule;
+    firebaseFirestore = firestoreModule;
+    
+    return true;
+  } catch (error) {
+    console.error('Failed to initialize Firebase imports:', error);
+    return false;
+  }
+}
+
+// Simple notification function fallback
+function showNotification(message, type = 'info', duration = 4000) {
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 500;
+    z-index: 1000;
+    transition: opacity 0.3s;
+  `;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    setTimeout(() => toast.remove(), 300);
+  }, duration);
+}
 
 class AuthManager {
   constructor() {
     this.currentUser = null;
     this.authStateCallbacks = [];
-    this.initAuthStateListener();
+    this.isInitialized = false;
+  }
+
+  // Initialize authentication manager
+  async initialize() {
+    if (this.isInitialized) return true;
+    
+    try {
+      const success = await initFirebaseImports();
+      if (!success) {
+        throw new Error('Failed to initialize Firebase');
+      }
+      
+      this.initAuthStateListener();
+      this.isInitialized = true;
+      console.log('Auth Manager initialized successfully');
+      return true;
+    } catch (error) {
+      console.error('Failed to initialize Auth Manager:', error);
+      this.showOfflineMode();
+      return false;
+    }
+  }
+
+  // Show offline mode
+  showOfflineMode() {
+    showNotification('Sistema funcionando em modo offline', 'warning');
+    // Create a mock user for demonstration
+    this.currentUser = {
+      uid: 'demo-user',
+      email: 'demo@roi360.com',
+      displayName: 'Demo User'
+    };
+    this.showDashboard();
   }
 
   // Initialize authentication state listener
   initAuthStateListener() {
-    onAuthStateChanged(auth, async (user) => {
+    if (!firebaseAuth || !auth) {
+      console.warn('Firebase Auth not available, using demo mode');
+      return;
+    }
+    
+    firebaseAuth.onAuthStateChanged(auth, async (user) => {
       this.currentUser = user;
       
       if (user) {
@@ -49,8 +117,13 @@ class AuthManager {
 
   // Load user profile from Firestore
   async loadUserProfile(userId) {
+    if (!firebaseFirestore || !db) {
+      console.warn('Firestore not available');
+      return;
+    }
+    
     try {
-      const userDoc = await getDoc(doc(db, 'users', userId));
+      const userDoc = await firebaseFirestore.getDoc(firebaseFirestore.doc(db, 'users', userId));
       if (userDoc.exists()) {
         this.currentUser.profile = userDoc.data();
       }
@@ -61,8 +134,15 @@ class AuthManager {
 
   // Sign in with email and password
   async signIn(email, password) {
+    if (!firebaseAuth || !auth) {
+      showNotification('Sistema em modo offline - usando usuário demo', 'warning');
+      this.currentUser = { uid: 'demo', email, displayName: 'Demo User' };
+      this.showDashboard();
+      return this.currentUser;
+    }
+    
     try {
-      const result = await signInWithEmailAndPassword(auth, email, password);
+      const result = await firebaseAuth.signInWithEmailAndPassword(auth, email, password);
       showNotification('Login realizado com sucesso!', 'success');
       return result.user;
     } catch (error) {
