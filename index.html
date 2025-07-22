@@ -1,761 +1,157 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="scroll-smooth">
+<html lang="pt-BR" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ROI-360 - Automatize Suas Vendas com I.A.</title>
+    <title>ROI-360 Automação - Dashboard</title>
     
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Meta tags for PWA -->
+    <meta name="description" content="Sistema de automação avançado com inteligência artificial para otimização de vendas e processos">
+    <meta name="theme-color" content="#1e293b">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="ROI-360 Automação">
+    
+    <!-- Favicon and PWA icons -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%233b82f6'><path d='M12 2L2 7V17L12 22L22 17V7L12 2Z'/></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%233b82f6'><path d='M12 2L2 7V17L12 22L22 17V7L12 2Z'/></svg>">
     
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
-
-    <!-- Scripts for PDF Generation -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     
-    <style>
-        /* Custom styles to apply the Inter font */
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0a0a0a;
-            color: #f5f5f5;
-        }
-        /* Custom gradient for headlines and highlights */
-        .gradient-text {
-            background: linear-gradient(90deg, #4f46e5, #c026d3);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        .cta-button {
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4);
-        }
-        .cta-button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(192, 38, 211, 0.5);
-        }
-        .feature-card, .price-card, .contract-card {
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(255, 255, 255, 0.02);
-            backdrop-filter: blur(10px);
-            transition: all 0.3s ease;
-        }
-        .feature-card:hover {
-            border-color: #4f46e5;
-            transform: translateY(-5px);
-        }
-
-        /* Contract & Checkout Styles */
-        .tab-button.active {
-            border-color: #4f46e5; /* Indigo */
-            color: #818cf8; /* Light Indigo */
-            background-color: rgba(79, 70, 229, 0.1);
-        }
-        .signature-canvas {
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            background-color: #f8fafc;
-            cursor: crosshair;
-            touch-action: none;
-        }
-        .input-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-        }
-        .input-group input {
-            width: 100%;
-            padding: 0.75rem;
-            border-radius: 0.375rem;
-            font-size: 1rem;
-            color: #f5f5f5;
-            background-color: #1f2937; /* Gray 800 */
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        #notification-toast {
-            position: fixed; bottom: 20px; left: 50%;
-            transform: translateX(-50%);
-            padding: 12px 24px; border-radius: 8px;
-            color: white; font-weight: 500;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            opacity: 0; visibility: hidden;
-            transition: opacity 0.3s, visibility 0.3s, transform 0.3s;
-            z-index: 1000;
-        }
-        #notification-toast.show {
-            opacity: 1; visibility: visible;
-            transform: translate(-50%, -10px);
-        }
-        .spinner {
-            animation: spin 1s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-    </style>
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="styles.css">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Preload critical resources -->
+    <link rel="modulepreload" href="firebase-config.js">
+    <link rel="modulepreload" href="auth.js">
+    <link rel="modulepreload" href="automation.js">
+    <link rel="modulepreload" href="dashboard.js">
+    <link rel="modulepreload" href="utils.js">
 </head>
-<body class="antialiased overflow-x-hidden">
-    <div id="notification-toast"></div>
-
-    <!-- Header -->
-    <header class="py-4 px-6 md:px-10 flex justify-between items-center sticky top-0 z-50 bg-black/50 backdrop-blur-lg border-b border-gray-800">
-        <h1 class="text-2xl font-bold text-white">ROI-<span class="gradient-text">360</span></h1>
-        <a href="#pricing" class="cta-button bg-gradient-to-r from-indigo-600 to-purple-700 text-white font-semibold py-2 px-6 rounded-lg shadow-lg">
-            Ver Planos
-        </a>
-    </header>
-
-    <!-- Main Content -->
-    <main id="main-content">
-        <!-- Hero Section -->
-        <section class="text-center py-20 md:py-32 px-4">
-            <div class="max-w-4xl mx-auto">
-                <h2 class="text-4xl md:text-6xl font-black tracking-tight leading-tight mb-6">
-                    Vendas Diárias, Sem Anúncios. <span class="gradient-text">O Poder da Automação com I.A.</span>
-                </h2>
-                <p class="text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-10">
-                    Nossos Agentes de Inteligência Artificial trabalham 24/7 para encontrar, qualificar e engajar seus clientes ideais, transformando suas vendas em uma máquina de receita previsível.
-                </p>
-                <a href="#pricing" class="cta-button inline-block bg-gradient-to-r from-indigo-600 to-purple-700 text-white font-bold text-xl py-4 px-10 rounded-lg shadow-xl">
-                    Quero Automatizar Minhas Vendas
-                </a>
-            </div>
-        </section>
-
-        <!-- Problem Section -->
-        <section id="problem" class="py-20 px-4 bg-black">
-            <div class="max-w-5xl mx-auto">
-                <div class="text-center mb-12">
-                    <h3 class="text-3xl md:text-4xl font-bold mb-4">A insegurança do tráfego pago está custando caro.</h3>
-                    <p class="text-gray-400 max-w-3xl mx-auto">Sua empresa vive em uma montanha-russa de resultados, totalmente dependente de algoritmos que mudam sem aviso prévio.</p>
-                </div>
-                <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-                    <!-- Pain Point 1 -->
-                    <div class="feature-card p-6 rounded-xl">
-                        <div class="text-indigo-400 mb-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-                        </div>
-                        <h4 class="font-bold text-lg mb-2">Custos Crescentes</h4>
-                        <p class="text-gray-400 text-sm">Orçamentos de anúncios que só aumentam e devoram sua margem de lucro.</p>
-                    </div>
-                    <!-- Pain Point 2 -->
-                    <div class="feature-card p-6 rounded-xl">
-                        <div class="text-indigo-400 mb-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-                        </div>
-                        <h4 class="font-bold text-lg mb-2">Resultados Imprevisíveis</h4>
-                        <p class="text-gray-400 text-sm">Um dia você tem leads, no outro, o algoritmo muda e tudo para.</p>
-                    </div>
-                    <!-- Pain Point 3 -->
-                    <div class="feature-card p-6 rounded-xl">
-                        <div class="text-indigo-400 mb-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"></path></svg>
-                        </div>
-                        <h4 class="font-bold text-lg mb-2">Dependência Total</h4>
-                        <p class="text-gray-400 text-sm">Seu faturamento depende 100% de plataformas como Google e Meta.</p>
-                    </div>
-                    <!-- Pain Point 4 -->
-                    <div class="feature-card p-6 rounded-xl">
-                        <div class="text-indigo-400 mb-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20v-6M6 20v-4M18 20v-8"></path></svg>
-                        </div>
-                        <h4 class="font-bold text-lg mb-2">Complexidade e Tempo</h4>
-                        <p class="text-gray-400 text-sm">Gerenciar campanhas, criativos e métricas exige tempo e expertise.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Solution Section -->
-        <section id="solution" class="py-20 px-4">
-            <div class="max-w-5xl mx-auto">
-                <div class="text-center mb-16">
-                    <h3 class="text-3xl md:text-4xl font-bold mb-4">A Solução: <span class="gradient-text">Agentes de I.A. ROI-360</span></h3>
-                    <p class="text-gray-400 max-w-3xl mx-auto">Uma força de vendas digital, personalizada e incansável que prospecta clientes organicamente, 24 horas por dia, 7 dias por semana.</p>
-                </div>
-                <div class="relative">
-                    <div class="hidden md:block absolute top-6 bottom-6 left-1/2 w-0.5 -translate-x-1/2 bg-gray-700 border border-dashed border-gray-600"></div>
-                    <div class="relative md:flex w-full mb-16">
-                        <div class="md:w-1/2 flex justify-end md:pr-16"><div class="p-6 bg-gray-900 border border-gray-800 rounded-xl max-w-sm text-right"><h4 class="text-xl font-bold mb-2 text-indigo-400">1. Mapeamento Estratégico</h4><p class="text-gray-300">Entendemos a fundo seu negócio para construir a estratégia de prospecção perfeita.</p></div></div><div class="md:w-1/2"></div><div class="hidden md:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-indigo-600 border-4 border-gray-800 items-center justify-center text-white font-bold text-xl z-10">1</div>
-                    </div>
-                    <div class="relative md:flex w-full mb-16">
-                        <div class="md:w-1/2"></div><div class="md:w-1/2 flex justify-start md:pl-16"><div class="p-6 bg-gray-900 border border-gray-800 rounded-xl max-w-sm"><h4 class="text-xl font-bold mb-2 text-indigo-400">2. Implementação do Agente I.A.</h4><p class="text-gray-300">Configuramos e treinamos seu agente para buscar e iniciar conversas com potenciais clientes.</p></div></div><div class="hidden md:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-indigo-600 border-4 border-gray-800 items-center justify-center text-white font-bold text-xl z-10">2</div>
-                    </div>
-                    <div class="relative md:flex w-full mb-16">
-                        <div class="md:w-1/2 flex justify-end md:pr-16"><div class="p-6 bg-gray-900 border border-gray-800 rounded-xl max-w-sm text-right"><h4 class="text-xl font-bold mb-2 text-indigo-400">3. Engajamento e Qualificação</h4><p class="text-gray-300">O agente nutre o relacionamento e entrega apenas leads quentes e qualificados.</p></div></div><div class="md:w-1/2"></div><div class="hidden md:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-indigo-600 border-4 border-gray-800 items-center justify-center text-white font-bold text-xl z-10">3</div>
-                    </div>
-                    <div class="relative md:flex w-full">
-                        <div class="md:w-1/2"></div><div class="md:w-1/2 flex justify-start md:pl-16"><div class="p-6 bg-gray-900 border border-gray-800 rounded-xl max-w-sm"><h4 class="text-xl font-bold mb-2 text-indigo-400">4. Vendas Humanizadas</h4><p class="text-gray-300">Sua equipe foca 100% em fechar negócios com leads que já demonstraram interesse.</p></div></div><div class="hidden md:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-indigo-600 border-4 border-gray-800 items-center justify-center text-white font-bold text-xl z-10">4</div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Pricing Section -->
-        <section id="pricing" class="py-20 px-4 bg-black">
-            <div class="max-w-5xl mx-auto">
-                <div class="text-center mb-12">
-                    <h3 class="text-3xl md:text-4xl font-bold mb-4">Comece Sua Jornada de Automação</h3>
-                    <p class="text-gray-400 max-w-3xl mx-auto">Construa a base do seu crescimento com um motor de vendas que nunca para.</p>
-                </div>
-                <div class="flex justify-center">
-                    <div class="price-card p-8 rounded-2xl flex flex-col max-w-md">
-                        <h4 class="text-2xl font-bold text-indigo-400 mb-2">Plano Orgânico I.A.</h4>
-                        <p class="text-gray-300 mb-6">A base para sua máquina de vendas.</p>
-                        <div class="mb-6"><p class="text-gray-400 text-sm">Taxa única de implementação</p><p class="text-4xl font-black text-white">$1,350</p></div>
-                        <div class="mb-6"><p class="text-gray-400 text-sm">Custo operacional mensal</p><p class="text-4xl font-black text-white">$450<span class="text-xl font-medium text-gray-400">/mês</span></p></div>
-                        <ul class="space-y-4 text-gray-300 flex-grow mb-8">
-                            <li class="flex items-start"><span class="text-indigo-500 mr-3 mt-1">✓</span> Mapeamento estratégico e setup</li>
-                            <li class="flex items-start"><span class="text-indigo-500 mr-3 mt-1">✓</span> Prospecção e qualificação 24/7</li>
-                            <li class="flex items-start"><span class="text-indigo-500 mr-3 mt-1">✓</span> Otimização constante das campanhas</li>
-                            <li class="flex items-start"><span class="text-indigo-500 mr-3 mt-1">✓</span> Relatórios de performance e insights</li>
-                            <li class="flex items-start"><span class="text-indigo-500 mr-3 mt-1">✓</span> Suporte técnico contínuo</li>
-                        </ul>
-                        <button data-plan="organico_ia" class="cta-button w-full text-center bg-gradient-to-r from-indigo-800 to-purple-900 hover:from-indigo-600 hover:to-purple-700 text-white font-bold py-3 px-8 rounded-lg mt-auto">
-                            Construir Minha Base
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- Controversial Truth Section -->
-        <section id="controversy" class="py-20 px-4 bg-gray-900/50">
-            <div class="max-w-3xl mx-auto text-center">
-                <h3 class="text-3xl md:text-4xl font-bold mb-6">Uma Verdade <span class="gradient-text">Controversa</span> Sobre Anúncios</h3>
-                <p class="text-lg text-gray-400 mb-4">A base do seu crescimento deve ser orgânica, sólida e previsível.</p>
-                <p class="text-lg text-gray-300 font-semibold mb-8">Mas e se, no futuro, você pudesse usar a mesma inteligência para criar campanhas pagas cirurgicamente precisas?</p>
-                <div class="p-6 border border-indigo-500/30 rounded-xl bg-black">
-                    <p class="text-gray-400">Uma vez que seu motor orgânico esteja funcionando, nossos Agentes de I.A. podem analisar os dados dos seus melhores clientes para otimizar campanhas de tráfego pago, transformando-as de uma aposta cara em um investimento com ROI garantido. Primeiro a liberdade, depois o domínio total.</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- Upgrade Pricing Section -->
-        <section id="upgrade-pricing" class="py-20 px-4 bg-black">
-            <div class="max-w-5xl mx-auto">
-                <div class="text-center mb-12">
-                    <h3 class="text-3xl md:text-4xl font-bold mb-4">Pronto para o Próximo Nível?</h3>
-                    <p class="text-gray-400 max-w-3xl mx-auto">Para empresas que não querem apenas competir, mas dominar o mercado, apresentamos a solução definitiva.</p>
-                </div>
-                <div class="flex justify-center">
-                    <div class="price-card p-8 rounded-2xl flex flex-col max-w-md border-2 border-indigo-600 relative">
-                        <div class="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-xs font-bold px-3 py-1 rounded-full">UPGRADE PREMIUM</div>
-                        <h4 class="text-2xl font-bold text-indigo-400 mb-2">Plano Domínio 360</h4>
-                        <p class="text-gray-300 mb-6">Prospecção I.A. + Tráfego de Performance</p>
-                        <div class="mb-6"><p class="text-gray-400 text-sm">Mensalidade All-in-One</p><div class="text-5xl font-black mb-1">$2,250 <span class="text-2xl font-medium text-gray-400">/mês</span></div></div>
-                        <ul class="space-y-4 text-gray-300 flex-grow mb-8">
-                            <li class="flex items-start"><span class="font-bold text-indigo-400 mr-3 mt-1">✓</span> <span class="font-bold">Tudo do Plano Orgânico I.A., e mais:</span></li>
-                            <li class="flex items-start"><span class="text-indigo-500 mr-3 mt-1">✓</span> Gestão de Tráfego de Performance</li>
-                            <li class="flex items-start"><span class="text-indigo-500 mr-3 mt-1">✓</span> Otimização de Anúncios com I.A.</li>
-                            <li class="flex items-start"><span class="text-indigo-500 mr-3 mt-1">✓</span> Criação de Públicos de Alta Conversão</li>
-                            <li class="flex items-start"><span class="text-indigo-500 mr-3 mt-1">✓</span> Análise Preditiva de ROI em anúncios</li>
-                            <li class="flex items-start"><span class="text-indigo-500 mr-3 mt-1">✓</span> Relatórios de performance unificados</li>
-                        </ul>
-                        <button data-plan="dominio_360" class="cta-button w-full text-center bg-gradient-to-r from-indigo-600 to-purple-700 text-white font-bold py-3 px-8 rounded-lg shadow-lg mt-auto">
-                            Dominar o Mercado
-                        </button>
-                    </div>
-                </div>
-                <p class="text-center text-gray-500 mt-8 text-sm">* O valor do investimento em anúncios (orçamento de tráfego) não está incluso na mensalidade do Plano Domínio 360.</p>
-            </div>
-        </section>
-    </main>
-
-    <!-- CONTRACT & CHECKOUT SECTIONS (Initially Hidden) -->
-    <section id="contract-section" class="hidden container mx-auto p-4 md:p-8">
-        <div class="contract-card p-4 sm:p-8">
-            <header class="text-center mb-8">
-                <h1 class="text-3xl md:text-4xl font-bold gradient-text">Contrato de Prestação de Serviços</h1>
-                <p id="contract-header-subtitle" class="text-gray-400 mt-2">Sua Empresa & ROI-360</p>
-            </header>
-            <nav id="contract-tabs" class="flex flex-wrap border-b border-gray-700 mb-6">
-                <button data-tab="overview" class="tab-button active text-sm sm:text-base font-medium py-3 px-3 sm:px-5 border-b-2 border-transparent">Visão Geral</button>
-                <button data-tab="parties" class="tab-button text-sm sm:text-base font-medium py-3 px-3 sm:px-5 border-b-2 border-transparent">Partes</button>
-                <button data-tab="services" class="tab-button text-sm sm:text-base font-medium py-3 px-3 sm:px-5 border-b-2 border-transparent">Serviços</button>
-                <button data-tab="financial" class="tab-button text-sm sm:text-base font-medium py-3 px-3 sm:px-5 border-b-2 border-transparent">Financeiro</button>
-                <button data-tab="term" class="tab-button text-sm sm:text-base font-medium py-3 px-3 sm:px-5 border-b-2 border-transparent">Prazo</button>
-                <button data-tab="signatures" class="tab-button text-sm sm:text-base font-medium py-3 px-3 sm:px-5 border-b-2 border-transparent">Assinaturas</button>
-            </nav>
-            <main id="contract-content"><!-- Contract content will be populated by JS --></main>
+<body class="antialiased">
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="fixed inset-0 bg-gray-900 flex items-center justify-center z-50">
+        <div class="text-center">
+            <div class="spinner mb-4" style="width: 2rem; height: 2rem; border-width: 3px;"></div>
+            <h2 class="text-xl font-semibold text-white mb-2">ROI-360 Automação</h2>
+            <p class="text-gray-400">Inicializando sistema...</p>
         </div>
-    </section>
+    </div>
 
-    <section id="checkout-section" class="hidden container mx-auto p-4 md:p-8">
-         <div class="contract-card p-4 sm:p-8 max-w-2xl mx-auto">
-             <header class="text-center mb-8">
-                 <h1 class="text-3xl md:text-4xl font-bold gradient-text">Finalizar Pagamento</h1>
-                 <p id="checkout-summary" class="text-gray-400 mt-2">Plano selecionado: <span class="font-bold text-indigo-400"></span></p>
-             </header>
-             <div class="flex justify-center">
-                 <div id="pix-container" class="p-6 rounded-lg bg-black text-center w-full md:w-2/3">
-                     <!-- PIX content will be populated by JS -->
-                 </div>
-             </div>
-             <div class="text-center mt-8">
-                 <button id="back-to-proposal-btn" class="text-indigo-400 hover:text-indigo-300">&larr; Voltar para os Planos</button>
-             </div>
-         </div>
-    </section>
+    <!-- Main Dashboard Container -->
+    <div id="dashboard" class="hidden">
+        <!-- Dashboard content will be rendered here by dashboard.js -->
+    </div>
 
-    <!-- Footer -->
-    <footer class="bg-black py-8 px-4 border-t border-gray-800">
-        <div class="max-w-5xl mx-auto text-center text-gray-500">
-            <p class="font-bold text-lg mb-2">ROI-360</p>
-            <p>&copy; 2024 ROI-360. Todos os direitos reservados.</p>
-            <p>Transformando vendas com Inteligência Artificial.</p>
+    <!-- Auth Modal Container -->
+    <!-- Auth modal will be dynamically created by auth.js -->
+
+    <!-- Notification Container -->
+    <!-- Notifications will be dynamically created by utils.js -->
+
+    <!-- Error Boundary -->
+    <div id="error-boundary" class="hidden fixed inset-0 bg-red-900 bg-opacity-50 flex items-center justify-center z-50">
+        <div class="bg-gray-800 p-8 rounded-lg max-w-md w-full mx-4">
+            <div class="text-center">
+                <div class="text-red-500 text-4xl mb-4">⚠️</div>
+                <h3 class="text-xl font-bold text-white mb-2">Erro do Sistema</h3>
+                <p id="error-message" class="text-gray-300 mb-6">Ocorreu um erro inesperado.</p>
+                <button id="reload-btn" class="btn btn-primary">Recarregar Página</button>
+            </div>
         </div>
-    </footer>
+    </div>
 
+    <!-- Scripts -->
     <script type="module">
-        // Firebase Imports
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        // Global error handler
+        window.addEventListener('error', (event) => {
+            console.error('Global error:', event.error);
+            showErrorBoundary(event.error.message);
+        });
 
-        let db, auth, userId;
-        let selectedPlan = {};
-        let currentClientData = null;
+        window.addEventListener('unhandledrejection', (event) => {
+            console.error('Unhandled promise rejection:', event.reason);
+            showErrorBoundary(event.reason.message || 'Promise rejection');
+        });
 
-        const planDetails = {
-            organico_ia: { 
-                name: "Plano Orgânico I.A.", 
-                priceText: "$1,350 (Implementação) + $450/mês",
-                checkoutPrice: 1350.00,
-                financialClause: "O CONTRATANTE pagará ao CONTRATADO o valor único de <strong>$1,350 (mil trezentos e cinquenta dólares)</strong> referente à implementação e, a partir do segundo mês, o valor mensal de <strong>$450 (quatrocentos e cinquenta dólares)</strong> pela operação contínua.",
-                services: [
-                    "Mapeamento estratégico e setup do Agente de I.A.",
-                    "Prospecção e qualificação de leads 24/7.",
-                    "Otimização constante das campanhas de prospecção.",
-                    "Relatórios de performance e insights.",
-                    "Suporte técnico contínuo."
-                ] 
-            },
-            dominio_360: { 
-                name: "Plano Domínio 360", 
-                priceText: "$2,250/mês",
-                checkoutPrice: 2250.00,
-                financialClause: "O CONTRATANTE pagará ao CONTRATADO o valor mensal de <strong>$2,250 (dois mil duzentos e cinquenta dólares)</strong>. O investimento em anúncios é de responsabilidade do CONTRATANTE.",
-                services: [
-                    "Todos os itens do Plano Orgânico I.A.",
-                    "Gestão de Tráfego de Performance (Google/Meta Ads).",
-                    "Otimização de Anúncios com I.A.",
-                    "Criação de Públicos de Alta Conversão.",
-                    "Análise Preditiva de ROI em anúncios.",
-                    "Relatórios de performance unificados (Orgânico + Pago)."
-                ] 
-            }
-        };
-
-        const mainContent = document.getElementById('main-content');
-        const contractSection = document.getElementById('contract-section');
-        const checkoutSection = document.getElementById('checkout-section');
-        const notificationToast = document.getElementById('notification-toast');
-
-        function showNotification(message, type = 'info', duration = 4000) {
-            notificationToast.textContent = message;
-            notificationToast.className = `fixed bottom-5 left-1/2 -translate-x-1/2 px-6 py-3 rounded-lg text-white font-semibold shadow-lg transition-all duration-300 show`;
-            notificationToast.classList.add(type === 'success' ? 'bg-green-500' : type === 'error' ? 'bg-red-500' : 'bg-indigo-500');
-            setTimeout(() => { notificationToast.className = notificationToast.className.replace('show', ''); }, duration);
+        function showErrorBoundary(message) {
+            const errorBoundary = document.getElementById('error-boundary');
+            const errorMessage = document.getElementById('error-message');
+            errorMessage.textContent = message;
+            errorBoundary.classList.remove('hidden');
         }
 
-        async function initializeFirebase() {
+        document.getElementById('reload-btn').addEventListener('click', () => {
+            window.location.reload();
+        });
+
+        // Main application initialization
+        async function initializeApp() {
             try {
-                // Use environment-provided config, with a fallback for local testing
-                const firebaseConfig = typeof __firebase_config !== 'undefined'
-                    ? JSON.parse(__firebase_config)
-                    : {
-                        apiKey: "YOUR_API_KEY", // Replace with your actual config for local testing
-                        authDomain: "contrato-839eb.firebaseapp.com",
-                        projectId: "contrato-839eb",
-                        storageBucket: "contrato-839eb.appspot.com",
-                        messagingSenderId: "257509711471",
-                        appId: "1:257509711471:web:bcd069639d845fd88db79a"
-                    };
-
-                const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                auth = getAuth(app);
-
-                // Listen for auth state changes to get the user ID
-                onAuthStateChanged(auth, user => {
+                // Import modules
+                const { authManager } = await import('./auth.js');
+                const { automationManager } = await import('./automation.js');
+                const { dashboardManager } = await import('./dashboard.js');
+                
+                // Initialize authentication first
+                console.log('Initializing authentication...');
+                authManager.onAuthStateChange(async (user) => {
                     if (user) {
-                        userId = user.uid;
-                        console.log("Authenticated with UID:", userId);
+                        console.log('User authenticated, initializing automation system...');
+                        
+                        // Initialize automation system
+                        await automationManager.initialize();
+                        
+                        // Initialize dashboard
+                        await dashboardManager.initialize();
+                        
+                        // Hide loading screen
+                        hideLoadingScreen();
                     } else {
-                        userId = null;
-                        console.log("User is signed out.");
+                        console.log('User not authenticated');
+                        hideLoadingScreen();
                     }
                 });
 
-                // Sign in using the provided token or fall back to anonymous
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
+                console.log('Application initialized successfully');
+                
             } catch (error) {
-                console.error("Firebase initialization failed:", error);
-                if (error.code === 'auth/operation-not-allowed') {
-                    showNotification("Erro de Configuração: Login anônimo não está habilitado no seu painel do Firebase. Vá para Authentication > Sign-in method e ative 'Anônimo'.", "error", 10000);
-                } else {
-                    showNotification("Erro ao conectar com o sistema de contratos.", "error");
-                }
+                console.error('Failed to initialize application:', error);
+                showErrorBoundary(error.message);
             }
         }
 
-        function setupContract(planKey) {
-            selectedPlan = planDetails[planKey];
-            mainContent.classList.add('hidden');
-            contractSection.classList.remove('hidden');
-            checkoutSection.classList.add('hidden');
+        function hideLoadingScreen() {
+            const loadingScreen = document.getElementById('loading-screen');
+            loadingScreen.style.opacity = '0';
+            setTimeout(() => {
+                loadingScreen.classList.add('hidden');
+            }, 300);
+        }
 
-            const contractContent = document.getElementById('contract-content');
-            contractContent.innerHTML = `
-                <!-- Overview -->
-                <section id="overview" class="tab-content prose max-w-none text-gray-300">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div class="bg-black p-6 rounded-lg"><h3 class="font-bold text-lg mb-2 text-indigo-400">Objeto Principal</h3><p>Automação de Vendas e Prospecção com I.A.</p></div>
-                        <div class="bg-black p-6 rounded-lg"><h3 class="font-bold text-lg mb-2 text-indigo-400">Valor</h3><p class="text-xl font-bold">${selectedPlan.priceText}</p></div>
-                        <div class="bg-black p-6 rounded-lg"><h3 class="font-bold text-lg mb-2 text-indigo-400">Prazo do Contrato</h3><p class="text-xl font-bold">6 meses</p></div>
-                    </div>
-                </section>
-                <!-- Parties -->
-                <section id="parties" class="tab-content hidden"><div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div class="border border-gray-700 rounded-lg p-6">
-                        <h3 class="font-bold text-xl mb-4 text-indigo-400">CONTRATANTE</h3>
-                        <div id="contratante-form" class="form-section space-y-4">
-                            <div class="input-group"><label for="input-nome-completo">Nome da Empresa/Razão Social:</label><input type="text" id="input-nome-completo" required></div>
-                            <div class="input-group"><label for="input-cnpj">CPF/CNPJ:</label><input type="text" id="input-cnpj" required></div>
-                            <div class="input-group"><label for="input-endereco">Endereço Completo:</label><input type="text" id="input-endereco"></div>
-                            <div class="input-group"><label for="input-email">E-mail de Contato:</label><input type="email" id="input-email" required></div>
-                            <button id="save-data-btn" class="mt-4 cta-button w-full text-center bg-gradient-to-r from-indigo-600 to-purple-700 text-white font-bold py-2 px-6 rounded-lg">Salvar Dados do Contratante</button>
-                        </div>
-                    </div>
-                    <div class="border border-gray-700 rounded-lg p-6 text-gray-300"><h3 class="font-bold text-xl mb-4 text-indigo-400">CONTRATADO</h3><p><strong>Nome:</strong> ROI-360 (Matheus Henrique Laurindo)</p><p><strong>CNPJ/CPF:</strong> 100.936.909-16</p><p><strong>Endereço:</strong> Rua Aquidabã, 199, Escola Agrícola, Blumenau, SC, 89037-740</p><p><strong>E-mail:</strong> laurindomatheus40@gmail.com</p></div>
-                </div></section>
-                <!-- Services -->
-                <section id="services" class="tab-content hidden prose max-w-none text-gray-300"><h2 class="text-indigo-400">CLÁUSULA 1 – OBJETO</h2><p>O objeto é a prestação de serviços de Automação de Vendas e Prospecção com I.A., conforme o <strong>${selectedPlan.name}</strong>, que inclui:</p><ul id="service-list" class="list-disc list-inside space-y-2">${selectedPlan.services.map(s => `<li>${s}</li>`).join('')}</ul></section>
-                <!-- Financial -->
-                <section id="financial" class="tab-content hidden prose max-w-none text-gray-300"><h2 class="text-indigo-400">CLÁUSULA 2 – VALOR E PAGAMENTO</h2><p>${selectedPlan.financialClause}</p></section>
-                <!-- Term & Termination -->
-                <section id="term" class="tab-content hidden prose max-w-none text-gray-300"><h2 class="text-indigo-400">CLÁUSULA 3 – PRAZO E RESCISÃO</h2><p>Este contrato tem vigência de 6 meses, renovado automaticamente por iguais períodos. A rescisão por qualquer uma das partes exige aviso prévio de 30 dias. Em caso de rescisão imotivada pelo CONTRATANTE durante o prazo inicial, incidirá multa de 20% sobre o valor restante do contrato.</p></section>
-                <!-- Signatures -->
-                <section id="signatures" class="tab-content hidden prose max-w-none text-gray-300"><p>As partes, de pleno acordo, assinam o presente Contrato.</p><p id="signature-date-location" class="font-semibold">Blumenau/SC, ${new Date().toLocaleDateString('pt-BR')}</p><div class="mt-12 grid grid-cols-1 md:grid-cols-2 gap-12 text-center"><div><p class="text-lg">Assinatura do Contratante:</p><div class="mt-4 flex flex-col items-center"><canvas id="signature-canvas" class="signature-canvas w-full max-w-sm h-32 rounded-md"></canvas><button id="clear-signature-btn" class="mt-2 text-sm text-gray-400 hover:text-white">Limpar</button></div></div><div><p class="text-lg">Assinatura do Contratado:</p><div class="mt-4 text-2xl font-serif italic text-indigo-300">ROI-360</div></div></div><div class="text-center mt-12"><button id="proceed-to-checkout-btn" class="cta-button inline-flex items-center bg-gradient-to-r from-indigo-600 to-purple-700 text-white font-bold text-lg px-10 py-4 rounded-lg"><span id="btn-text">Assinar, Gerar PDF e Pagar</span><div id="btn-spinner" class="hidden spinner w-5 h-5 border-2 border-white border-t-transparent rounded-full ml-3"></div></button></div></section>
-            `;
-
-            document.querySelectorAll('#contract-tabs .tab-button').forEach(tab => {
-                tab.addEventListener('click', (e) => {
-                    const targetId = e.currentTarget.getAttribute('data-tab');
-                    document.querySelectorAll('#contract-tabs .tab-button').forEach(t => t.classList.remove('active'));
-                    e.currentTarget.classList.add('active');
-                    document.querySelectorAll('#contract-content .tab-content').forEach(content => {
-                        content.classList.toggle('hidden', content.id !== targetId);
+        // Service Worker registration for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then((registration) => {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch((registrationError) => {
+                        console.log('SW registration failed: ', registrationError);
                     });
-                });
             });
-            
-            document.getElementById('save-data-btn').addEventListener('click', saveContractorData);
-
-            const signatureCanvas = document.getElementById('signature-canvas');
-            const signatureCtx = signatureCanvas.getContext('2d');
-            let drawing = false;
-            const getCoords = (e) => {
-                const rect = signatureCanvas.getBoundingClientRect();
-                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                return { x: clientX - rect.left, y: clientY - rect.top };
-            }
-            const startDrawing = (e) => { e.preventDefault(); drawing = true; const { x, y } = getCoords(e); signatureCtx.moveTo(x, y); };
-            const endDrawing = () => { drawing = false; signatureCtx.beginPath(); };
-            const draw = (e) => {
-                if (!drawing) return;
-                e.preventDefault();
-                const { x, y } = getCoords(e);
-                signatureCtx.lineWidth = 2; signatureCtx.lineCap = 'round'; signatureCtx.strokeStyle = '#000000';
-                signatureCtx.lineTo(x, y); signatureCtx.stroke(); signatureCtx.beginPath(); signatureCtx.moveTo(x, y);
-            };
-            signatureCanvas.addEventListener('mousedown', startDrawing);
-            signatureCanvas.addEventListener('mouseup', endDrawing);
-            signatureCanvas.addEventListener('mousemove', draw);
-            signatureCanvas.addEventListener('mouseout', endDrawing);
-            signatureCanvas.addEventListener('touchstart', startDrawing);
-            signatureCanvas.addEventListener('touchend', endDrawing);
-            signatureCanvas.addEventListener('touchmove', draw);
-            document.getElementById('clear-signature-btn').addEventListener('click', () => {
-                signatureCtx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
-            });
-
-            document.getElementById('proceed-to-checkout-btn').addEventListener('click', finalizeContract);
-            document.querySelector('#contract-tabs .tab-button[data-tab="overview"]').click();
-            window.scrollTo(0, 0);
         }
 
-        function saveContractorData() {
-            const data = {
-                nomeCompleto: document.getElementById('input-nome-completo').value,
-                cnpj: document.getElementById('input-cnpj').value,
-                endereco: document.getElementById('input-endereco').value,
-                email: document.getElementById('input-email').value,
-            };
-
-            if (!data.nomeCompleto || !data.cnpj || !data.email) {
-                showNotification("Preencha Nome, CNPJ/CPF e E-mail.", "error");
-                return;
-            }
-            
-            currentClientData = data;
-            showNotification("Dados do contratante salvos com sucesso!", "success");
-            document.querySelector('[data-tab="services"]').click(); // Move to next tab
-        }
-
-        async function generateContractPDF(clientData, signatureDataURL) {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
-
-            const margins = { top: 25, bottom: 20, left: 25, right: 25 };
-            const usableWidth = doc.internal.pageSize.width - margins.left - margins.right;
-            let y = margins.top;
-            const lineSpacing = 7;
-
-            const checkPageBreak = (neededHeight = 20) => {
-                if (y + neededHeight > doc.internal.pageSize.height - margins.bottom) {
-                    doc.addPage();
-                    y = margins.top;
-                }
-            };
-
-            // --- HEADER ---
-            doc.setFontSize(16);
-            doc.setFont('helvetica', 'bold');
-            doc.text("CONTRATO DE PRESTAÇÃO DE SERVIÇOS", doc.internal.pageSize.width / 2, y, { align: 'center' });
-            y += lineSpacing * 2;
-
-            // --- PARTIES ---
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'bold');
-            doc.text("DAS PARTES", margins.left, y);
-            y += lineSpacing;
-
-            doc.setFont('helvetica', 'normal');
-            let partiesText = `CONTRATANTE: ${clientData.nomeCompleto}, pessoa jurídica de direito privado, inscrita no CNPJ/CPF sob o nº ${clientData.cnpj}, com sede em ${clientData.endereco}, doravante denominada simplesmente CONTRATANTE.`;
-            let splitText = doc.splitTextToSize(partiesText, usableWidth);
-            doc.text(splitText, margins.left, y);
-            y += (splitText.length * lineSpacing) + (lineSpacing / 2);
-            
-            partiesText = `CONTRATADO: ROI-360 (Matheus Henrique Laurindo), inscrito no CPF sob o nº 100.936.909-16, com sede na Rua Aquidabã, 199, Escola Agrícola, Blumenau, SC, CEP 89037-740, doravante denominado simplesmente CONTRATADO.`;
-            splitText = doc.splitTextToSize(partiesText, usableWidth);
-            doc.text(splitText, margins.left, y);
-            y += (splitText.length * lineSpacing) + lineSpacing;
-
-            // --- CLAUSES ---
-            const addClause = (title, text) => {
-                checkPageBreak(30);
-                doc.setFont('helvetica', 'bold');
-                doc.text(title, margins.left, y);
-                y += lineSpacing;
-                doc.setFont('helvetica', 'normal');
-                const splitClause = doc.splitTextToSize(text, usableWidth);
-                doc.text(splitClause, margins.left, y);
-                y += (splitClause.length * lineSpacing) + lineSpacing;
-            };
-            
-            const financialClauseText = selectedPlan.financialClause.replace(/<strong>/g, '').replace(/<\/strong>/g, '');
-
-            addClause("CLÁUSULA PRIMEIRA - DO OBJETO", `O presente contrato tem como objeto a prestação de serviços de Automação de Vendas e Prospecção com Inteligência Artificial, conforme detalhado no ${selectedPlan.name}. Os serviços incluem: ${selectedPlan.services.join(', ')}.`);
-            addClause("CLÁUSULA SEGUNDA - DO VALOR E DA FORMA DE PAGAMENTO", financialClauseText);
-            addClause("CLÁUSULA TERCEIRA - DO PRAZO E DA RESCISÃO", "Este contrato tem vigência de 6 meses, renovado automaticamente por iguais períodos. A rescisão por qualquer uma das partes exige aviso prévio de 30 dias. Em caso de rescisão imotivada pelo CONTRATANTE durante o prazo inicial, incidirá multa de 20% sobre o valor restante do contrato.");
-            addClause("CLÁUSULA QUARTA - DAS OBRIGAÇÕES", "O CONTRATADO se compromete a prestar os serviços com zelo e profissionalismo. O CONTRATANTE se compromete a fornecer as informações e acessos necessários e a realizar os pagamentos pontualmente.");
-            addClause("CLÁUSULA QUINTA - DO FORO", "Fica eleito o foro da comarca de Blumenau/SC para dirimir quaisquer controvérsias oriundas do presente contrato.");
-
-            // --- SIGNATURES ---
-            checkPageBreak(60);
-            y += lineSpacing * 2;
-            const dateText = `Blumenau/SC, ${new Date().toLocaleDateString('pt-BR')}.`;
-            doc.text(dateText, doc.internal.pageSize.width / 2, y, { align: 'center' });
-            y += lineSpacing * 4;
-
-            const signatureY = y;
-            const signatureWidth = 70;
-            const contractorX = margins.left + (usableWidth / 4) - (signatureWidth / 2);
-            const contractedX = margins.left + (usableWidth * 3 / 4) - (signatureWidth / 2);
-
-            if (signatureDataURL) {
-                doc.addImage(signatureDataURL, 'PNG', contractorX, signatureY, signatureWidth, 25);
-            }
-            doc.line(contractorX, signatureY + 30, contractorX + signatureWidth, signatureY + 30);
-            doc.text(clientData.nomeCompleto, contractorX + signatureWidth / 2, signatureY + 35, { align: 'center' });
-            doc.text("CONTRATANTE", contractorX + signatureWidth / 2, signatureY + 40, { align: 'center' });
-
-            doc.setFont('helvetica', 'italic');
-            doc.text('ROI-360', contractedX + signatureWidth/2, signatureY + 25, {align: 'center'});
-            doc.setFont('helvetica', 'normal');
-            doc.line(contractedX, signatureY + 30, contractedX + signatureWidth, signatureY + 30);
-            doc.text('ROI-360', contractedX + signatureWidth / 2, signatureY + 35, { align: 'center' });
-            doc.text("CONTRATADO", contractedX + signatureWidth / 2, signatureY + 40, { align: 'center' });
-
-            doc.save(`Contrato_${clientData.nomeCompleto.replace(/\s/g, '_')}.pdf`);
-            return doc.output('datauristring');
-        }
-
-        async function finalizeContract(e) {
-            const button = e.currentTarget;
-
-            if (!currentClientData) {
-                showNotification("Por favor, preencha e salve os dados do contratante primeiro.", "error");
-                document.querySelector('[data-tab="parties"]').click();
-                return;
-            }
-
-            button.disabled = true;
-            document.getElementById('btn-text').classList.add('hidden');
-            document.getElementById('btn-spinner').classList.remove('hidden');
-
-            const signatureCanvas = document.getElementById('signature-canvas');
-            const emptyCanvas = document.createElement('canvas');
-            emptyCanvas.width = signatureCanvas.width; emptyCanvas.height = signatureCanvas.height;
-            if (signatureCanvas.toDataURL() === emptyCanvas.toDataURL()) {
-                showNotification("A assinatura do contratante é obrigatória.", "error");
-                document.querySelector('[data-tab="signatures"]').click();
-                button.disabled = false;
-                document.getElementById('btn-text').classList.remove('hidden');
-                document.getElementById('btn-spinner').classList.add('hidden');
-                return;
-            }
-            const signatureDataURL = signatureCanvas.toDataURL('image/png');
-
-            try {
-                showNotification("Gerando PDF do contrato...", "info");
-                await generateContractPDF(currentClientData, signatureDataURL);
-                
-                showNotification("Salvando contrato no sistema...", "info");
-                
-                if (!userId) {
-                    throw new Error("Autenticação do usuário não encontrada. A página será recarregada.");
-                }
-                
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                const docId = currentClientData.cnpj.replace(/\D/g, '') + '_' + Date.now();
-                const contractPath = `artifacts/${appId}/users/${userId}/contracts`;
-                
-                const contractData = {
-                    ...currentClientData,
-                    planName: selectedPlan.name,
-                    planPriceText: selectedPlan.priceText,
-                    signedAt: new Date().toISOString(),
-                    signature: signatureDataURL
-                };
-                
-                await setDoc(doc(db, contractPath, docId), contractData);
-                
-                showNotification("Contrato salvo! Redirecionando para pagamento...", "success");
-                
-                setTimeout(() => {
-                    showCheckout();
-                }, 1500);
-
-            } catch (error) {
-                console.error("Erro ao finalizar contrato:", error);
-                showNotification(`Erro: ${error.message}`, "error", 6000);
-                if (error.message.includes("Autenticação")) {
-                    setTimeout(() => window.location.reload(), 6000);
-                }
-            } finally {
-                button.disabled = false;
-                document.getElementById('btn-text').classList.remove('hidden');
-                document.getElementById('btn-spinner').classList.add('hidden');
-            }
-        }
-
-        function showCheckout() {
-            mainContent.classList.add('hidden');
-            contractSection.classList.add('hidden');
-            
-            const summarySpan = document.getElementById('checkout-summary').querySelector('span');
-            if (summarySpan) {
-                summarySpan.textContent = selectedPlan.name;
-            }
-            
-            const pixContainer = document.getElementById('pix-container');
-            
-            const pixKeys = {
-                organico_ia: "00020126580014br.gov.bcb.pix0136c77aad1d-c47a-4c55-a3fb-09c4788fadd152040000530398654077513.165802BR5925MATHEUS HENRIQUE LAURINDO6008BLUMENAU62290525X7M6U8RQ48GMCLTUGLW55R2KT630496D5",
-                dominio_360: "00020126580014br.gov.bcb.pix0136c77aad1d-c47a-4c55-a3fb-09c4788fadd1520400005303986540812521.935802BR5925MATHEUS HENRIQUE LAURINDO6008BLUMENAU62290525PSJM9CL96QDYWTX573RS5EXS7630457C6"
-            };
-            
-            const planKey = Object.keys(planDetails).find(key => planDetails[key].name === selectedPlan.name);
-            const pixKey = pixKeys[planKey];
-
-            if (pixKey && pixContainer) {
-                pixContainer.innerHTML = `
-                    <h3 class="text-xl font-bold mb-4">Pagamento Inicial via PIX</h3>
-                    <p class="text-gray-400 mb-4">Aponte a câmera do seu celular para o QR Code ou copie a chave abaixo.</p>
-                    <div class="flex flex-col items-center">
-                        <div class="bg-white p-2 rounded-lg inline-block shadow-lg">
-                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(pixKey)}" 
-                                 alt="QR Code PIX" width="200" height="200" />
-                        </div>
-                        <div class="mt-6 w-full max-w-md">
-                            <label for="pix-key-input" class="block text-sm text-gray-400 mb-1 text-left">
-                                Chave PIX (Copia e Cola):
-                            </label>
-                            <div class="flex items-center">
-                                <input type="text" id="pix-key-input" 
-                                       class="bg-gray-800 text-gray-400 text-xs p-3 rounded-l-md w-full border border-gray-700" 
-                                       value="${pixKey}" readonly>
-                                <button id="copy-pix-key-btn" 
-                                        class="bg-indigo-600 text-white p-3 rounded-r-md hover:bg-indigo-700" 
-                                        title="Copiar chave PIX">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" 
-                                         viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mt-6 text-center">
-                        <p class="text-gray-500 text-xs">
-                            Após o pagamento, envie o comprovante para o nosso WhatsApp para agilizar a ativação.
-                        </p>
-                    </div>
-                `;
-                
-                const copyButton = document.getElementById('copy-pix-key-btn');
-                const pixInput = document.getElementById('pix-key-input');
-                if (copyButton && pixInput) {
-                    copyButton.addEventListener('click', () => {
-                        pixInput.select();
-                        pixInput.setSelectionRange(0, 99999); // For mobile devices
-                        try {
-                            document.execCommand('copy');
-                            showNotification("Chave PIX copiada!", "success");
-                        } catch (err) {
-                            showNotification("Erro ao copiar. Por favor, copie manualmente.", "error");
-                        }
-                        window.getSelection().removeAllRanges();
-                    });
-                }
-            }
-
-            checkoutSection.classList.remove('hidden');
-            
-            window.scrollTo(0, 0);
-        }
-
-        document.addEventListener('DOMContentLoaded', async () => {
-            await initializeFirebase();
-            document.querySelectorAll('[data-plan]').forEach(button => {
-                button.addEventListener('click', () => setupContract(button.getAttribute('data-plan')));
-            });
-            document.getElementById('back-to-proposal-btn').addEventListener('click', () => {
-                checkoutSection.classList.add('hidden');
-                mainContent.classList.remove('hidden');
-                window.scrollTo({ top: document.getElementById('pricing').offsetTop, behavior: 'smooth' });
-            });
-        });
+        // Initialize the application
+        initializeApp();
     </script>
+</body>
+</html>
 </body>
 </html>

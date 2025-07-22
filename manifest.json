@@ -1,0 +1,62 @@
+{
+  "name": "ROI-360 Automação",
+  "short_name": "ROI-360",
+  "description": "Sistema de automação avançado com inteligência artificial para otimização de vendas e processos",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#1e293b",
+  "orientation": "portrait-primary",
+  "categories": ["business", "productivity", "utilities"],
+  "lang": "pt-BR",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%233b82f6'><path d='M12 2L2 7V17L12 22L22 17V7L12 2Z'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%233b82f6'><path d='M12 2L2 7V17L12 22L22 17V7L12 2Z'/></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Acessar dashboard principal",
+      "url": "/?view=overview",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%233b82f6'><path d='M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z'/></svg>",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Nova Automação",
+      "short_name": "Nova",
+      "description": "Criar nova automação",
+      "url": "/?action=new-automation",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%2310b981'><path d='M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z'/></svg>",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 800' fill='%230f172a'><rect width='1200' height='800' fill='%230f172a'/><rect x='50' y='50' width='1100' height='100' fill='%231e293b' rx='8'/><text x='600' y='110' text-anchor='middle' fill='%23f1f5f9' font-size='24' font-family='sans-serif'>ROI-360 Automação Dashboard</text></svg>",
+      "sizes": "1200x800",
+      "type": "image/svg+xml",
+      "form_factor": "wide",
+      "label": "Dashboard principal do sistema"
+    }
+  ]
+}
